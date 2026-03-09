@@ -1,0 +1,197 @@
+[
+  {
+    "id": "prod-basic-001",
+    "name": "SafeGuard Basic",
+    "tier": "basic",
+    "insurer": "Assupol Life",
+    "description": "Essential funeral cover for individuals and immediate family. Simple, affordable protection for when it matters most.",
+    "tagline": "Simple & affordable funeral protection",
+    "minSumAssured": 5000,
+    "maxSumAssured": 30000,
+    "sumAssuredStep": 2500,
+    "premiumBands": [
+      { "minAge": 18, "maxAge": 29, "ratePerThousand": 2.80 },
+      { "minAge": 30, "maxAge": 39, "ratePerThousand": 3.50 },
+      { "minAge": 40, "maxAge": 49, "ratePerThousand": 5.20 },
+      { "minAge": 50, "maxAge": 59, "ratePerThousand": 8.10 },
+      { "minAge": 60, "maxAge": 65, "ratePerThousand": 13.50 }
+    ],
+    "adminFee": 15,
+    "memberTypes": [
+      { "type": "main", "label": "Main Member", "maxCount": 1, "minAge": 18, "maxAge": 65, "premiumMultiplier": 1.0 },
+      { "type": "spouse", "label": "Spouse / Partner", "maxCount": 1, "minAge": 18, "maxAge": 65, "premiumMultiplier": 1.0 },
+      { "type": "child", "label": "Child", "maxCount": 6, "minAge": 0, "maxAge": 21, "premiumMultiplier": 0, "flatRatePerThousand": 0.80 }
+    ],
+    "features": [
+      "Coverage from R5,000 to R30,000",
+      "Immediate accidental death cover",
+      "Includes spouse and up to 6 children",
+      "6-month waiting period (natural causes)",
+      "Simple claims process",
+      "24-hour claims line"
+    ],
+    "exclusions": [
+      "Suicide within 12 months of inception",
+      "War or terrorism",
+      "Nuclear events",
+      "Pre-existing terminal conditions"
+    ],
+    "waitingPeriodMonths": 6,
+    "accidentalDeathWaitingPeriodMonths": 0,
+    "productDisclosureText": "SafeGuard Basic is a funeral insurance policy underwritten by Assupol Life Limited, a licensed long-term insurer. This policy is administered by Fairbairn Consult (FSP XXXXX). A 6-month waiting period applies to natural death claims. Accidental death claims are paid from inception. Monthly premiums are guaranteed for 12 months and may be reviewed annually.",
+    "fspNumber": "FSP XXXXX",
+    "isActive": true,
+    "effectiveDate": "2024-01-01"
+  },
+  {
+    "id": "prod-standard-001",
+    "name": "FamilyCare Standard",
+    "tier": "standard",
+    "insurer": "Clientele Life",
+    "description": "Comprehensive funeral cover for your whole family, including parents and in-laws. Covers all the costs of a dignified farewell.",
+    "tagline": "Whole family covered, peace of mind delivered",
+    "minSumAssured": 10000,
+    "maxSumAssured": 60000,
+    "sumAssuredStep": 2500,
+    "premiumBands": [
+      { "minAge": 18, "maxAge": 29, "ratePerThousand": 3.10 },
+      { "minAge": 30, "maxAge": 39, "ratePerThousand": 4.00 },
+      { "minAge": 40, "maxAge": 49, "ratePerThousand": 5.80 },
+      { "minAge": 50, "maxAge": 59, "ratePerThousand": 9.20 },
+      { "minAge": 60, "maxAge": 65, "ratePerThousand": 15.00 }
+    ],
+    "adminFee": 18,
+    "memberTypes": [
+      { "type": "main", "label": "Main Member", "maxCount": 1, "minAge": 18, "maxAge": 65, "premiumMultiplier": 1.0 },
+      { "type": "spouse", "label": "Spouse / Partner", "maxCount": 1, "minAge": 18, "maxAge": 65, "premiumMultiplier": 1.0 },
+      { "type": "child", "label": "Child", "maxCount": 8, "minAge": 0, "maxAge": 21, "premiumMultiplier": 0, "flatRatePerThousand": 0.90 },
+      { "type": "parent", "label": "Parent", "maxCount": 2, "minAge": 18, "maxAge": 75, "premiumMultiplier": 1.4 },
+      { "type": "parent_in_law", "label": "Parent-in-law", "maxCount": 2, "minAge": 18, "maxAge": 75, "premiumMultiplier": 1.4 }
+    ],
+    "features": [
+      "Coverage from R10,000 to R60,000",
+      "Covers main member, spouse, children, parents and in-laws",
+      "Immediate accidental death cover",
+      "6-month waiting period (natural causes)",
+      "Repatriation benefit up to 200km",
+      "Grocery benefit: R3,000 food voucher on claim",
+      "Tombstone benefit included"
+    ],
+    "exclusions": [
+      "Suicide within 24 months of inception",
+      "War or terrorism",
+      "Nuclear events",
+      "Pre-existing terminal conditions",
+      "Parents over 75 at entry"
+    ],
+    "waitingPeriodMonths": 6,
+    "accidentalDeathWaitingPeriodMonths": 0,
+    "productDisclosureText": "FamilyCare Standard is a funeral insurance policy underwritten by Clientele Life Limited, a licensed long-term insurer. This policy includes cover for the main member's parents and parents-in-law (subject to entry age limits). A 6-month waiting period applies to natural death claims. The grocery benefit is payable on successful claim.",
+    "fspNumber": "FSP XXXXX",
+    "isActive": true,
+    "effectiveDate": "2024-01-01"
+  },
+  {
+    "id": "prod-premium-001",
+    "name": "Heritage Premium",
+    "tier": "premium",
+    "insurer": "Old Mutual Insure",
+    "description": "Premium funeral cover including extended family members. Designed for those who honour Ubuntu and support their wider community.",
+    "tagline": "For families that take care of each other",
+    "minSumAssured": 15000,
+    "maxSumAssured": 75000,
+    "sumAssuredStep": 2500,
+    "premiumBands": [
+      { "minAge": 18, "maxAge": 29, "ratePerThousand": 3.50 },
+      { "minAge": 30, "maxAge": 39, "ratePerThousand": 4.60 },
+      { "minAge": 40, "maxAge": 49, "ratePerThousand": 6.50 },
+      { "minAge": 50, "maxAge": 59, "ratePerThousand": 10.80 },
+      { "minAge": 60, "maxAge": 65, "ratePerThousand": 17.20 }
+    ],
+    "adminFee": 22,
+    "memberTypes": [
+      { "type": "main", "label": "Main Member", "maxCount": 1, "minAge": 18, "maxAge": 65, "premiumMultiplier": 1.0 },
+      { "type": "spouse", "label": "Spouse / Partner", "maxCount": 1, "minAge": 18, "maxAge": 65, "premiumMultiplier": 1.0 },
+      { "type": "child", "label": "Child", "maxCount": 8, "minAge": 0, "maxAge": 21, "premiumMultiplier": 0, "flatRatePerThousand": 0.95 },
+      { "type": "parent", "label": "Parent", "maxCount": 2, "minAge": 18, "maxAge": 75, "premiumMultiplier": 1.5 },
+      { "type": "parent_in_law", "label": "Parent-in-law", "maxCount": 2, "minAge": 18, "maxAge": 75, "premiumMultiplier": 1.5 },
+      { "type": "extended", "label": "Extended Family", "maxCount": 6, "minAge": 18, "maxAge": 65, "premiumMultiplier": 1.2 }
+    ],
+    "features": [
+      "Coverage from R15,000 to R75,000",
+      "Covers extended family (aunts, uncles, grandparents, siblings)",
+      "Immediate accidental death cover",
+      "6-month waiting period (natural causes)",
+      "Repatriation benefit up to 500km",
+      "Grocery benefit: R5,000 food voucher",
+      "Tombstone benefit included",
+      "Airtime benefit: R500 communication allowance",
+      "Dedicated claims consultant"
+    ],
+    "exclusions": [
+      "Suicide within 24 months of inception",
+      "War or terrorism",
+      "Nuclear events",
+      "Pre-existing terminal conditions"
+    ],
+    "waitingPeriodMonths": 6,
+    "accidentalDeathWaitingPeriodMonths": 0,
+    "productDisclosureText": "Heritage Premium is a funeral insurance policy underwritten by Old Mutual Insure Limited. This policy extends cover to up to 6 extended family members including grandparents, siblings, aunts and uncles. Extended members must be aged 18-65 at entry. Benefits are paid within 48 hours of approved claims.",
+    "fspNumber": "FSP XXXXX",
+    "isActive": true,
+    "effectiveDate": "2024-01-01"
+  },
+  {
+    "id": "prod-elite-001",
+    "name": "Legacy Elite",
+    "tier": "elite",
+    "insurer": "Sanlam Sky",
+    "description": "Maximum funeral cover for large, extended families. The highest sum assured, comprehensive benefits, and premium service for those who want the very best.",
+    "tagline": "The finest farewell for those who matter most",
+    "minSumAssured": 25000,
+    "maxSumAssured": 100000,
+    "sumAssuredStep": 2500,
+    "premiumBands": [
+      { "minAge": 18, "maxAge": 29, "ratePerThousand": 4.00 },
+      { "minAge": 30, "maxAge": 39, "ratePerThousand": 5.20 },
+      { "minAge": 40, "maxAge": 49, "ratePerThousand": 7.50 },
+      { "minAge": 50, "maxAge": 59, "ratePerThousand": 12.50 },
+      { "minAge": 60, "maxAge": 65, "ratePerThousand": 20.00 }
+    ],
+    "adminFee": 25,
+    "memberTypes": [
+      { "type": "main", "label": "Main Member", "maxCount": 1, "minAge": 18, "maxAge": 65, "premiumMultiplier": 1.0 },
+      { "type": "spouse", "label": "Spouse / Partner", "maxCount": 1, "minAge": 18, "maxAge": 65, "premiumMultiplier": 1.0 },
+      { "type": "child", "label": "Child", "maxCount": 10, "minAge": 0, "maxAge": 26, "premiumMultiplier": 0, "flatRatePerThousand": 1.00 },
+      { "type": "parent", "label": "Parent", "maxCount": 2, "minAge": 18, "maxAge": 80, "premiumMultiplier": 1.6 },
+      { "type": "parent_in_law", "label": "Parent-in-law", "maxCount": 2, "minAge": 18, "maxAge": 80, "premiumMultiplier": 1.6 },
+      { "type": "extended", "label": "Extended Family", "maxCount": 10, "minAge": 18, "maxAge": 70, "premiumMultiplier": 1.3 }
+    ],
+    "features": [
+      "Maximum coverage up to R100,000",
+      "Up to 10 extended family members",
+      "Children covered up to age 26 (students)",
+      "Parents covered up to age 80",
+      "Immediate accidental death cover",
+      "Repatriation benefit - unlimited km",
+      "Grocery benefit: R10,000 food voucher",
+      "Tombstone benefit included",
+      "Livestock benefit: R5,000 contribution",
+      "Tent & chair hire benefit: R3,000",
+      "48-hour payout guarantee",
+      "Dedicated relationship manager"
+    ],
+    "exclusions": [
+      "Suicide within 24 months of inception",
+      "War or terrorism",
+      "Nuclear events",
+      "Pre-existing terminal conditions"
+    ],
+    "waitingPeriodMonths": 6,
+    "accidentalDeathWaitingPeriodMonths": 0,
+    "productDisclosureText": "Legacy Elite is a funeral insurance policy underwritten by Sanlam Sky, a subsidiary of Sanlam Group. This policy provides comprehensive coverage for large extended families. The 48-hour payout guarantee is subject to all required claim documents being submitted. Livestock and tent benefits are paid as cash additions to the main funeral benefit.",
+    "fspNumber": "FSP XXXXX",
+    "isActive": true,
+    "effectiveDate": "2024-01-01"
+  }
+]
