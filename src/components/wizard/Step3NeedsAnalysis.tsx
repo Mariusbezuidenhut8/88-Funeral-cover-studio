@@ -14,6 +14,9 @@ import {
   Shield,
   Wallet,
   BadgeCheck,
+  Building2,
+  Leaf,
+  Target,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatZAR } from "@/lib/utils/currency";
@@ -32,6 +35,33 @@ import { toast } from "sonner";
 export interface StepProps {
   onComplete: () => void;
 }
+
+// ─── Funeral scenario simulator ──────────────────────────────────────────────
+const FUNERAL_SCENARIOS = [
+  {
+    id: "traditional",
+    label: "Traditional Funeral",
+    description: "200+ guests, livestock slaughter, full catering, tent hire, night vigil",
+    cost: 55000,
+    Icon: Users,
+  },
+  {
+    id: "community",
+    label: "Large Community Funeral",
+    description: "400+ attendees, multiple livestock, large marquee, extensive catering",
+    cost: 80000,
+    Icon: Building2,
+  },
+  {
+    id: "simple",
+    label: "Simple Burial",
+    description: "Close family only, basic parlour services, no catering or large gathering",
+    cost: 25000,
+    Icon: Leaf,
+  },
+] as const;
+
+type ScenarioId = (typeof FUNERAL_SCENARIOS)[number]["id"];
 
 // ─── Income bracket display labels ───────────────────────────────────────────
 const BRACKET_LABELS: Record<IncomeBracket, string> = {
@@ -269,6 +299,7 @@ export default function Step3NeedsAnalysis({ onComplete }: StepProps) {
   const [cashSavings, setCashSavings] = useState(0);
   const [adviserNotes, setAdviserNotes] = useState("");
   const [notesError, setNotesError] = useState("");
+  const [activeScenario, setActiveScenario] = useState<ScenarioId | null>(null);
 
   const analysis = useMemo(() => {
     return calculateNeedsAnalysis({
@@ -333,13 +364,39 @@ export default function Step3NeedsAnalysis({ onComplete }: StepProps) {
     }
     setNotesError("");
     const now = new Date().toISOString();
+
+    const mainLine = familyStructure.lines.find((l) => l.type === "main");
+    const spouseLine = familyStructure.lines.find((l) => l.type === "spouse");
+    const childLine = familyStructure.lines.find((l) => l.type === "child");
+
     saveStep3({
+      // Core financials
       totalFuneralCost,
       existingCoverTotal,
       cashSavings,
       coverShortfall: analysis.coverShortfall,
       recommendedCover: analysis.recommendedCover,
+
+      // Affordability (feeds Step 4 product filter + Step 7 ROA)
       affordabilityRatio: displayRatio,
+      affordabilityMinPremium: affordabilityRange.minPremium,
+      affordabilityMaxPremium: affordabilityRange.maxPremium,
+      incomeBracketLabel,
+
+      // Family cover (pre-populates Step 5 configuration)
+      familyRecommendation: {
+        mainMember: mainLine?.recommendedCover ?? analysis.recommendedCover,
+        spouse: spouseLine?.recommendedCover ?? null,
+        child: childLine?.recommendedCover ?? 0,
+      },
+      familyCoverRecommended: analysis.familyCoverRecommended,
+
+      // FAIS flags (feed Step 7 ROA disclosures)
+      existingCoverConsidered: existingCoverTotal > 0,
+      scenarioLabel: activeScenario
+        ? FUNERAL_SCENARIOS.find((s) => s.id === activeScenario)?.label
+        : undefined,
+
       adviserNotes: adviserNotes.trim(),
       completedAt: now,
     });
@@ -375,10 +432,88 @@ export default function Step3NeedsAnalysis({ onComplete }: StepProps) {
           highlight
         />
         <MetricCard
-          label="Affordable Premium Range"
+          label="Affordability Range"
           value={`${formatZAR(affordabilityRange.minPremium, { showDecimals: false })} – ${formatZAR(affordabilityRange.maxPremium, { showDecimals: false })}`}
           sub="Per month (2–5% of income)"
         />
+      </div>
+
+      {/* ── Existing cover adjustment notice ── */}
+      {existingCoverTotal > 0 && (
+        <div className="flex items-start gap-3 rounded-xl border border-green-200 bg-green-50 px-4 py-3.5">
+          <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-green-800">
+              Existing cover identified and applied
+            </p>
+            <p className="text-sm text-green-700 mt-0.5">
+              You already have{" "}
+              <span className="font-bold">
+                {formatZAR(existingCoverTotal, { showDecimals: false })}
+              </span>{" "}
+              in existing funeral / life cover. This has been deducted from your estimated
+              funeral cost.
+            </p>
+            <div className="mt-2 flex flex-col sm:flex-row sm:items-center gap-2 text-sm">
+              <span className="text-green-700">
+                Estimated cost{" "}
+                <span className="font-medium">
+                  {formatZAR(totalFuneralCost, { showDecimals: false })}
+                </span>{" "}
+                − existing cover{" "}
+                <span className="font-medium">
+                  {formatZAR(existingCoverTotal, { showDecimals: false })}
+                </span>
+              </span>
+              <span className="hidden sm:block text-green-400">→</span>
+              <span className="font-bold text-green-900">
+                Additional cover required:{" "}
+                {formatZAR(
+                  Math.max(0, totalFuneralCost - existingCoverTotal - cashSavings),
+                  { showDecimals: false }
+                )}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Family Protection Recommendation ── */}
+      <div className="rounded-xl border border-blue-200 bg-blue-50 overflow-hidden">
+        <div className="px-4 py-3 bg-blue-100 border-b border-blue-200">
+          <div className="flex items-center gap-2">
+            <Users className="w-4 h-4 text-blue-700" />
+            <h3 className="text-sm font-semibold text-blue-800">
+              Family Protection Recommendation
+            </h3>
+          </div>
+          <p className="text-xs text-blue-600 mt-0.5">
+            {hasSpouseOrPartner
+              ? "Based on your marital status, a family policy is recommended."
+              : "Recommended cover structure based on your circumstances:"}
+          </p>
+        </div>
+
+        <div className="divide-y divide-blue-100">
+          {familyStructure.lines.map((line) => (
+            <FamilyCoverRow key={line.type} line={line} />
+          ))}
+          <div className="px-4 py-3 bg-blue-100/50 flex items-center justify-between">
+            <span className="text-sm font-semibold text-blue-900">Total family cover</span>
+            <span className="text-base font-extrabold text-blue-800">
+              {formatZAR(familyStructure.totalCover, { showDecimals: false })}
+              <span className="text-xs font-normal text-blue-500 ml-1">combined</span>
+            </span>
+          </div>
+        </div>
+
+        <div className="px-4 py-3 border-t border-blue-200">
+          <p className="text-xs text-blue-700 leading-relaxed">
+            <span className="font-semibold">Note: </span>
+            These are suggested amounts. You will customise the exact cover for each
+            family member in the next steps. Children&apos;s cover can be adjusted per child.
+          </p>
+        </div>
       </div>
 
       {/* ── Cover gap table ── */}
@@ -564,59 +699,172 @@ export default function Step3NeedsAnalysis({ onComplete }: StepProps) {
         </ul>
       </div>
 
-      {/* ── Family Protection Suggestion ── */}
-      <div className="rounded-xl border border-blue-200 bg-blue-50 overflow-hidden">
-        <div className="px-4 py-3 bg-blue-100 border-b border-blue-200">
+      {/* ── Funeral Scenario Simulator ── */}
+      <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+        <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
           <div className="flex items-center gap-2">
-            <Users className="w-4 h-4 text-blue-700" />
-            <h3 className="text-sm font-semibold text-blue-800">
-              Family Protection Suggestion
+            <Target className="w-4 h-4 text-gray-600" />
+            <h3 className="text-sm font-semibold text-gray-800">
+              Funeral Scenario Simulator
             </h3>
           </div>
-          <p className="text-xs text-blue-600 mt-0.5">
-            {hasSpouseOrPartner
-              ? "You indicated that you are married / living with a partner. Recommended cover structure for your family:"
-              : "Recommended cover structure based on your circumstances:"}
+          <p className="text-xs text-gray-500 mt-0.5">
+            See how your recommended cover holds up against common South African funeral
+            scenarios. Select one to compare.
           </p>
         </div>
 
-        <div className="divide-y divide-blue-100">
-          {familyStructure.lines.map((line) => (
-            <FamilyCoverRow key={line.type} line={line} />
-          ))}
-
-          {/* Total row */}
-          <div className="px-4 py-3 bg-blue-100/50 flex items-center justify-between">
-            <span className="text-sm font-semibold text-blue-900">
-              Total family cover
-            </span>
-            <span className="text-base font-extrabold text-blue-800">
-              {formatZAR(familyStructure.totalCover, { showDecimals: false })}
-              <span className="text-xs font-normal text-blue-500 ml-1">combined</span>
-            </span>
+        <div className="p-4 flex flex-col gap-4">
+          {/* Scenario cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {FUNERAL_SCENARIOS.map((scenario) => {
+              const isCovered = analysis.recommendedCover >= scenario.cost;
+              const isSelected = activeScenario === scenario.id;
+              const ScenarioIcon = scenario.Icon;
+              return (
+                <button
+                  key={scenario.id}
+                  type="button"
+                  onClick={() =>
+                    setActiveScenario(isSelected ? null : scenario.id)
+                  }
+                  className={`rounded-xl border-2 px-4 py-3.5 text-left flex flex-col gap-1.5 transition-all duration-150 ${
+                    isSelected
+                      ? "border-green-400 bg-green-50"
+                      : "border-gray-200 bg-gray-50 hover:border-gray-300 hover:bg-white"
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <ScenarioIcon
+                      className={`w-4 h-4 shrink-0 ${
+                        isSelected ? "text-green-700" : "text-gray-500"
+                      }`}
+                    />
+                    <span
+                      className={`text-sm font-semibold ${
+                        isSelected ? "text-green-800" : "text-gray-700"
+                      }`}
+                    >
+                      {scenario.label}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 leading-relaxed">
+                    {scenario.description}
+                  </p>
+                  <div className="flex items-center justify-between mt-1">
+                    <span
+                      className={`text-base font-bold ${
+                        isSelected ? "text-green-700" : "text-gray-900"
+                      }`}
+                    >
+                      {formatZAR(scenario.cost, { showDecimals: false })}
+                    </span>
+                    {isCovered ? (
+                      <span className="flex items-center gap-1 text-[11px] font-medium text-green-700 bg-green-100 px-2 py-0.5 rounded-full">
+                        <CheckCircle2 className="w-3 h-3" />
+                        Covered
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1 text-[11px] font-medium text-red-700 bg-red-100 px-2 py-0.5 rounded-full">
+                        <AlertTriangle className="w-3 h-3" />
+                        Shortfall
+                      </span>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
           </div>
-        </div>
 
-        <div className="px-4 py-3 border-t border-blue-200">
-          <p className="text-xs text-blue-700 leading-relaxed">
-            <span className="font-semibold">Note: </span>
-            These are suggested amounts. You will customise the exact cover for each
-            family member in the next steps. Children&apos;s cover can be adjusted per
-            child.
-          </p>
+          {/* Selected scenario verdict */}
+          {activeScenario ? (
+            (() => {
+              const scenario = FUNERAL_SCENARIOS.find(
+                (s) => s.id === activeScenario
+              )!;
+              const gap = analysis.recommendedCover - scenario.cost;
+              const isCovered = gap >= 0;
+              return (
+                <div
+                  className={`rounded-xl px-4 py-3 flex items-start gap-3 ${
+                    isCovered
+                      ? "bg-green-50 border border-green-200"
+                      : "bg-red-50 border border-red-200"
+                  }`}
+                >
+                  {isCovered ? (
+                    <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
+                  ) : (
+                    <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+                  )}
+                  <div>
+                    <p
+                      className={`text-sm font-semibold ${
+                        isCovered ? "text-green-800" : "text-red-800"
+                      }`}
+                    >
+                      {isCovered
+                        ? `Your recommended cover is sufficient for a ${scenario.label}`
+                        : `Your recommended cover may not fully cover a ${scenario.label}`}
+                    </p>
+                    <p
+                      className={`text-sm mt-0.5 ${
+                        isCovered ? "text-green-700" : "text-red-700"
+                      }`}
+                    >
+                      {isCovered
+                        ? `Your cover of ${formatZAR(analysis.recommendedCover, { showDecimals: false })} exceeds the estimated ${formatZAR(scenario.cost, { showDecimals: false })} cost — leaving a ${formatZAR(gap, { showDecimals: false })} buffer.`
+                        : `This scenario costs ${formatZAR(scenario.cost, { showDecimals: false })}. Your cover of ${formatZAR(analysis.recommendedCover, { showDecimals: false })} leaves a shortfall of ${formatZAR(Math.abs(gap), { showDecimals: false })}. Consider increasing your sum assured.`}
+                    </p>
+                  </div>
+                </div>
+              );
+            })()
+          ) : (
+            <p className="text-xs text-gray-400 text-center py-1">
+              Select a scenario above to see how your recommended cover compares.
+            </p>
+          )}
         </div>
       </div>
 
-      {/* ── Warnings ── */}
-      {analysis.warnings.length > 0 && (
+      {/* ── FAIS Risk Warnings ── */}
+      {(analysis.warnings.length > 0 || existingCoverTotal > 0) && (
         <div className="flex flex-col gap-2">
+          {/* Duplication warning — always shown when existing cover present */}
+          {existingCoverTotal > 0 && (
+            <div className="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
+              <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-blue-800">
+                  Disclosure — Existing Cover Considered
+                </p>
+                <p className="text-sm text-blue-700 mt-0.5">
+                  Existing funeral cover of{" "}
+                  <span className="font-semibold">
+                    {formatZAR(existingCoverTotal, { showDecimals: false })}
+                  </span>{" "}
+                  was identified and has been taken into account in this recommendation.
+                  The adviser must ensure that recommending additional cover does not
+                  result in undue duplication of benefits.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Affordability / other engine warnings */}
           {analysis.warnings.map((w, i) => (
             <div
               key={i}
               className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3"
             >
               <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-              <p className="text-sm text-amber-800">{w}</p>
+              <div>
+                <p className="text-sm font-semibold text-amber-800">
+                  Affordability Warning
+                </p>
+                <p className="text-sm text-amber-700 mt-0.5">{w}</p>
+              </div>
             </div>
           ))}
         </div>

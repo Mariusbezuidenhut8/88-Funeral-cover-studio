@@ -21,13 +21,36 @@ export interface FactFindStepData {
   completedAt: string;
 }
 
+export interface FamilyRecommendation {
+  mainMember: number;
+  spouse: number | null; // null if not married/partnered
+  child: number;
+}
+
 export interface NeedsAnalysisStepData {
+  // Core financials
   totalFuneralCost: number;
   existingCoverTotal: number;
   cashSavings: number;
   coverShortfall: number;
   recommendedCover: number;
-  affordabilityRatio: number; // premium/income %
+
+  // Affordability — feeds Step 4 product filter + Step 7 ROA
+  affordabilityRatio: number; // estimated premium as % of income
+  affordabilityMinPremium: number; // 2% of income
+  affordabilityMaxPremium: number; // 5% of income
+  incomeBracketLabel: string;
+
+  // Family cover — feeds Step 5 configuration pre-population
+  familyRecommendation: FamilyRecommendation;
+  familyCoverRecommended: boolean;
+
+  // Flags — feed Step 7 ROA disclosures
+  existingCoverConsidered: boolean;
+
+  // Optional: which scenario the adviser used during the simulator
+  scenarioLabel?: string;
+
   adviserNotes: string;
   completedAt: string;
 }
