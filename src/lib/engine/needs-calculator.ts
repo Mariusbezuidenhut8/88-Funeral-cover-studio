@@ -33,14 +33,60 @@ export function buildCostBreakdown(
   return { ...items, total, recommendedCover };
 }
 
+/** Affordability thresholds per FAIS guidance and industry norms */
+const AFFORDABILITY_MIN_PCT = 0.02; // 2% of income = comfortable lower bound
+const AFFORDABILITY_MAX_PCT = 0.05; // 5% of income = upper sustainable limit
+const AFFORDABILITY_WARN_PCT = 0.08; // 8% = caution zone
+const AFFORDABILITY_HARD_WARN_PCT = 0.12; // 12%+ = strong warning
+
+export interface AffordabilityRange {
+  minPremium: number;
+  maxPremium: number;
+  monthlyIncome: number;
+  incomeBracketLabel: string;
+}
+
+/**
+ * Calculate the affordable premium range for a given monthly income.
+ * Industry guidance: premiums should be 2–5% of gross monthly income.
+ */
+export function calculateAffordabilityRange(
+  monthlyIncome: number,
+  incomeBracketLabel: string
+): AffordabilityRange {
+  return {
+    minPremium: Math.round(monthlyIncome * AFFORDABILITY_MIN_PCT),
+    maxPremium: Math.round(monthlyIncome * AFFORDABILITY_MAX_PCT),
+    monthlyIncome,
+    incomeBracketLabel,
+  };
+}
+
+export type AffordabilityStatus = "comfortable" | "moderate" | "caution" | "warning";
+
+export function getAffordabilityStatus(
+  premium: number,
+  monthlyIncome: number
+): AffordabilityStatus {
+  if (monthlyIncome <= 0) return "comfortable";
+  const ratio = premium / monthlyIncome;
+  if (ratio <= AFFORDABILITY_MAX_PCT) return "comfortable";
+  if (ratio <= AFFORDABILITY_WARN_PCT) return "moderate";
+  if (ratio <= AFFORDABILITY_HARD_WARN_PCT) return "caution";
+  return "warning";
+}
+
 export interface NeedsAnalysisResult {
   totalFuneralCost: number;
   existingCoverTotal: number;
   cashSavings: number;
   coverShortfall: number;
   recommendedCover: number;
-  affordabilityRatio: number; // Estimated premium as % of monthly income
-  isAffordable: boolean; // True if ratio < 10%
+  affordabilityRatio: number;
+  affordabilityRange: AffordabilityRange;
+  affordabilityStatus: AffordabilityStatus;
+  isAffordable: boolean;
+  familyCoverRecommended: boolean;
   warnings: string[];
 }
 
@@ -49,42 +95,63 @@ export function calculateNeedsAnalysis(params: {
   existingCoverTotal: number;
   cashSavings: number;
   monthlyIncome: number;
+  incomeBracketLabel?: string;
   estimatedMonthlyPremium?: number;
+  hasSpouseOrPartner?: boolean;
+  existingMemberCount?: number;
 }): NeedsAnalysisResult {
   const {
     totalFuneralCost,
     existingCoverTotal,
     cashSavings,
     monthlyIncome,
+    incomeBracketLabel = "",
     estimatedMonthlyPremium = 0,
+    hasSpouseOrPartner = false,
+    existingMemberCount = 0,
   } = params;
 
   const coverShortfall = Math.max(
     0,
     totalFuneralCost - existingCoverTotal - cashSavings
   );
-  const recommendedCover = calculateRecommendedCover(coverShortfall || totalFuneralCost);
+  const recommendedCover = calculateRecommendedCover(
+    coverShortfall || totalFuneralCost
+  );
 
   const affordabilityRatio =
     monthlyIncome > 0
       ? (estimatedMonthlyPremium / monthlyIncome) * 100
       : 0;
 
+  const affordabilityRange = calculateAffordabilityRange(
+    monthlyIncome,
+    incomeBracketLabel
+  );
+
+  const affordabilityStatus = getAffordabilityStatus(
+    estimatedMonthlyPremium || affordabilityRange.minPremium,
+    monthlyIncome
+  );
+
+  // Recommend family cover if married/partnered or has existing dependants
+  const familyCoverRecommended = hasSpouseOrPartner || existingMemberCount > 0;
+
   const warnings: string[] = [];
 
-  if (affordabilityRatio > 15) {
+  if (affordabilityStatus === "warning") {
     warnings.push(
-      "The recommended premium exceeds 15% of your monthly income. Consider a lower sum assured."
+      "The estimated premium exceeds 12% of the client's monthly income. Consider reducing the sum assured or reviewing affordability."
     );
-  } else if (affordabilityRatio > 10) {
+  } else if (affordabilityStatus === "caution") {
     warnings.push(
-      "The recommended premium is between 10-15% of your monthly income. Please ensure this is affordable."
+      "The estimated premium is between 8–12% of monthly income. Please confirm this is sustainable for the client long-term."
     );
   }
 
   if (totalFuneralCost > MAX_COVER) {
     warnings.push(
-      `Your estimated funeral cost (R${totalFuneralCost.toLocaleString()}) exceeds the maximum cover available (R${MAX_COVER.toLocaleString()}). You may need to supplement with savings.`
+      `The estimated funeral cost (R${totalFuneralCost.toLocaleString()}) exceeds the maximum available cover of R${MAX_COVER.toLocaleString()}. Additional savings may be required.`
     );
   }
 
@@ -95,7 +162,10 @@ export function calculateNeedsAnalysis(params: {
     coverShortfall,
     recommendedCover,
     affordabilityRatio,
-    isAffordable: affordabilityRatio <= 10,
+    affordabilityRange,
+    affordabilityStatus,
+    isAffordable: affordabilityStatus === "comfortable" || affordabilityStatus === "moderate",
+    familyCoverRecommended,
     warnings,
   };
 }
