@@ -170,6 +170,156 @@ export function calculateNeedsAnalysis(params: {
   };
 }
 
+// ─── Family cover structure ───────────────────────────────────────────────────
+
+export interface FamilyMemberCoverLine {
+  type: "main" | "spouse" | "child" | "parent" | "extended";
+  label: string;
+  recommendedCover: number;
+  rationale: string;
+}
+
+export interface FamilyCoverStructure {
+  lines: FamilyMemberCoverLine[];
+  totalCover: number;
+  hasSpouse: boolean;
+  childrenIncluded: boolean;
+}
+
+/**
+ * Generate a recommended cover structure for each family member type
+ * based on the main member's recommended cover and marital status.
+ *
+ * Rules:
+ *  - Spouse: 85% of main member cover, rounded to R2,500, max R75,000
+ *  - Children: 33% of main member cover, rounded to R2,500, capped at R20,000
+ *  - Parents (optional): 70% of main, max R50,000
+ */
+export function generateFamilyCoverStructure(
+  mainRecommendedCover: number,
+  maritalStatus: string
+): FamilyCoverStructure {
+  const lines: FamilyMemberCoverLine[] = [];
+
+  // Main member is always included
+  lines.push({
+    type: "main",
+    label: "Main Member",
+    recommendedCover: mainRecommendedCover,
+    rationale: "Full recommended cover based on your funeral cost estimate.",
+  });
+
+  const hasSpouse =
+    maritalStatus === "married" || maritalStatus === "living-with-partner";
+
+  if (hasSpouse) {
+    const spouseCover = clamp(
+      roundToStep(mainRecommendedCover * 0.85, 2500),
+      5000,
+      75000
+    );
+    lines.push({
+      type: "spouse",
+      label: "Spouse / Partner",
+      recommendedCover: spouseCover,
+      rationale:
+        "85% of main member cover — spouse funeral costs are typically similar.",
+    });
+  }
+
+  // Children cover — recommended regardless of marital status as a suggestion
+  const childCover = clamp(
+    roundToStep(mainRecommendedCover * 0.33, 2500),
+    5000,
+    20000
+  );
+  lines.push({
+    type: "child",
+    label: "Each Child",
+    recommendedCover: childCover,
+    rationale:
+      "Children's funeral costs are lower; this amount covers burial and related expenses.",
+  });
+
+  const totalCover = lines.reduce((s, l) => s + l.recommendedCover, 0);
+
+  return {
+    lines,
+    totalCover,
+    hasSpouse,
+    childrenIncluded: true,
+  };
+}
+
+// ─── Why recommended reasons ──────────────────────────────────────────────────
+
+export interface RecommendationReason {
+  icon: "shield" | "wallet" | "users" | "check";
+  heading: string;
+  detail: string;
+}
+
+export function buildRecommendationReasons(params: {
+  totalFuneralCost: number;
+  recommendedCover: number;
+  coverShortfall: number;
+  existingCoverTotal: number;
+  isAffordable: boolean;
+  familyCoverRecommended: boolean;
+}): RecommendationReason[] {
+  const {
+    totalFuneralCost,
+    recommendedCover,
+    coverShortfall,
+    existingCoverTotal,
+    isAffordable,
+    familyCoverRecommended,
+  } = params;
+
+  const reasons: RecommendationReason[] = [
+    {
+      icon: "shield",
+      heading: "Covers expected funeral expenses",
+      detail: `Your estimated funeral costs total R${totalFuneralCost.toLocaleString()}. This cover amount is sufficient to cover all itemised costs including food, burial, transport, and related expenses.`,
+    },
+    {
+      icon: "check",
+      heading: "Includes a contingency buffer",
+      detail: `A 15% contingency (R${Math.round(totalFuneralCost * 0.15).toLocaleString()}) has been added for unexpected or underestimated costs — a common occurrence in real funeral situations.`,
+    },
+  ];
+
+  if (existingCoverTotal > 0) {
+    reasons.push({
+      icon: "shield",
+      heading: "Accounts for your existing cover",
+      detail: `Your existing funeral and life cover (R${existingCoverTotal.toLocaleString()}) has been deducted, so you only need to cover the shortfall of R${coverShortfall.toLocaleString()}.`,
+    });
+  }
+
+  if (isAffordable) {
+    reasons.push({
+      icon: "wallet",
+      heading: "Affordable within your income",
+      detail:
+        "The premium required for this cover falls within the recommended 2–5% of your monthly income, ensuring the policy remains sustainable long-term.",
+    });
+  }
+
+  if (familyCoverRecommended) {
+    reasons.push({
+      icon: "users",
+      heading: "Structured for family protection",
+      detail:
+        "Based on your marital status, a family policy is recommended. Cover amounts for your spouse and children have been tailored to their likely funeral costs.",
+    });
+  }
+
+  return reasons;
+}
+
+// ─── Product catalogue ────────────────────────────────────────────────────────
+
 export const DEFAULT_COST_ITEMS: Record<
   CostCategory,
   {

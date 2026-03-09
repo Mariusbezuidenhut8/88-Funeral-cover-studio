@@ -11,12 +11,19 @@ import {
   Info,
   Minus,
   Equal,
+  Shield,
+  Wallet,
+  BadgeCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatZAR } from "@/lib/utils/currency";
 import {
   calculateNeedsAnalysis,
+  generateFamilyCoverStructure,
+  buildRecommendationReasons,
   AffordabilityStatus,
+  RecommendationReason,
+  FamilyMemberCoverLine,
 } from "@/lib/engine/needs-calculator";
 import { INCOME_BRACKET_MIDPOINTS, IncomeBracket } from "@/types/client.types";
 import { useWizardStore } from "@/lib/store/wizard.store";
@@ -149,6 +156,69 @@ function GapRow({
   );
 }
 
+// ─── Reason row ──────────────────────────────────────────────────────────────
+const REASON_ICONS: Record<
+  RecommendationReason["icon"],
+  React.FC<{ className?: string }>
+> = {
+  shield: Shield,
+  wallet: Wallet,
+  users: Users,
+  check: BadgeCheck,
+};
+
+function ReasonRow({ reason }: { reason: RecommendationReason }) {
+  const Icon = REASON_ICONS[reason.icon];
+  return (
+    <li className="flex items-start gap-3 px-4 py-3.5">
+      <span className="flex items-center justify-center w-7 h-7 rounded-full bg-green-100 shrink-0 mt-0.5">
+        <Icon className="w-3.5 h-3.5 text-green-700" />
+      </span>
+      <div>
+        <p className="text-sm font-semibold text-gray-800">{reason.heading}</p>
+        <p className="text-sm text-gray-500 mt-0.5 leading-relaxed">{reason.detail}</p>
+      </div>
+    </li>
+  );
+}
+
+// ─── Family cover row ─────────────────────────────────────────────────────────
+const MEMBER_TYPE_COLORS: Record<
+  FamilyMemberCoverLine["type"],
+  { dot: string; badge: string }
+> = {
+  main: { dot: "bg-green-500", badge: "bg-green-100 text-green-800" },
+  spouse: { dot: "bg-blue-500", badge: "bg-blue-100 text-blue-800" },
+  child: { dot: "bg-purple-400", badge: "bg-purple-100 text-purple-800" },
+  parent: { dot: "bg-amber-400", badge: "bg-amber-100 text-amber-800" },
+  extended: { dot: "bg-gray-400", badge: "bg-gray-100 text-gray-700" },
+};
+
+function FamilyCoverRow({ line }: { line: FamilyMemberCoverLine }) {
+  const colors = MEMBER_TYPE_COLORS[line.type];
+  return (
+    <div className="flex items-start gap-3 px-4 py-3.5">
+      <span
+        className={`w-2.5 h-2.5 rounded-full shrink-0 mt-1.5 ${colors.dot}`}
+      />
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-sm font-semibold text-gray-800">{line.label}</span>
+          <span
+            className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${colors.badge}`}
+          >
+            {line.type === "child" ? "per child" : line.type}
+          </span>
+        </div>
+        <p className="text-xs text-gray-500 mt-0.5">{line.rationale}</p>
+      </div>
+      <span className="text-base font-bold text-gray-900 shrink-0 ml-2">
+        {formatZAR(line.recommendedCover, { showDecimals: false })}
+      </span>
+    </div>
+  );
+}
+
 // ─── Affordability bar ────────────────────────────────────────────────────────
 function AffordabilityBar({ ratio, status }: { ratio: number; status: AffordabilityStatus }) {
   // Bar fills from 0–12% mapped to 0–100%
@@ -222,13 +292,39 @@ export default function Step3NeedsAnalysis({ onComplete }: StepProps) {
 
   const { affordabilityRange, affordabilityStatus } = analysis;
 
-  // Affordability ratio using the midpoint of the affordable range as proxy premium
   const proxPremiumForRatio = Math.round(
     (affordabilityRange.minPremium + affordabilityRange.maxPremium) / 2
   );
   const displayRatio = monthlyIncome > 0
     ? (proxPremiumForRatio / monthlyIncome) * 100
-    : 3.5; // sensible default if no income
+    : 3.5;
+
+  // Why this cover is recommended
+  const reasons = useMemo(
+    () =>
+      buildRecommendationReasons({
+        totalFuneralCost,
+        recommendedCover: analysis.recommendedCover,
+        coverShortfall: analysis.coverShortfall,
+        existingCoverTotal,
+        isAffordable: analysis.isAffordable,
+        familyCoverRecommended: analysis.familyCoverRecommended,
+      }),
+    [
+      totalFuneralCost,
+      analysis.recommendedCover,
+      analysis.coverShortfall,
+      existingCoverTotal,
+      analysis.isAffordable,
+      analysis.familyCoverRecommended,
+    ]
+  );
+
+  // Family cover structure
+  const familyStructure = useMemo(
+    () => generateFamilyCoverStructure(analysis.recommendedCover, maritalStatus),
+    [analysis.recommendedCover, maritalStatus]
+  );
 
   function handleComplete() {
     if (adviserNotes.trim().length < 50) {
@@ -447,6 +543,66 @@ export default function Step3NeedsAnalysis({ onComplete }: StepProps) {
                 ? "You are married or living with a partner. A family policy covering your spouse and children is strongly recommended."
                 : "You have existing dependants. A family policy is recommended to protect those who depend on you."
               : "Based on your circumstances, individual cover will meet your current needs. You can add family members later."}
+          </p>
+        </div>
+      </div>
+
+      {/* ── Why this cover is recommended ── */}
+      <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+        <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-green-600" />
+            <h3 className="text-sm font-semibold text-gray-800">
+              Why this cover is recommended
+            </h3>
+          </div>
+        </div>
+        <ul className="divide-y divide-gray-100">
+          {reasons.map((reason, i) => (
+            <ReasonRow key={i} reason={reason} />
+          ))}
+        </ul>
+      </div>
+
+      {/* ── Family Protection Suggestion ── */}
+      <div className="rounded-xl border border-blue-200 bg-blue-50 overflow-hidden">
+        <div className="px-4 py-3 bg-blue-100 border-b border-blue-200">
+          <div className="flex items-center gap-2">
+            <Users className="w-4 h-4 text-blue-700" />
+            <h3 className="text-sm font-semibold text-blue-800">
+              Family Protection Suggestion
+            </h3>
+          </div>
+          <p className="text-xs text-blue-600 mt-0.5">
+            {hasSpouseOrPartner
+              ? "You indicated that you are married / living with a partner. Recommended cover structure for your family:"
+              : "Recommended cover structure based on your circumstances:"}
+          </p>
+        </div>
+
+        <div className="divide-y divide-blue-100">
+          {familyStructure.lines.map((line) => (
+            <FamilyCoverRow key={line.type} line={line} />
+          ))}
+
+          {/* Total row */}
+          <div className="px-4 py-3 bg-blue-100/50 flex items-center justify-between">
+            <span className="text-sm font-semibold text-blue-900">
+              Total family cover
+            </span>
+            <span className="text-base font-extrabold text-blue-800">
+              {formatZAR(familyStructure.totalCover, { showDecimals: false })}
+              <span className="text-xs font-normal text-blue-500 ml-1">combined</span>
+            </span>
+          </div>
+        </div>
+
+        <div className="px-4 py-3 border-t border-blue-200">
+          <p className="text-xs text-blue-700 leading-relaxed">
+            <span className="font-semibold">Note: </span>
+            These are suggested amounts. You will customise the exact cover for each
+            family member in the next steps. Children&apos;s cover can be adjusted per
+            child.
           </p>
         </div>
       </div>
