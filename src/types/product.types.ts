@@ -59,6 +59,15 @@ export interface Product {
   effectiveDate: string;
 }
 
+/** UI role label assigned after scoring — drives card order and badge text */
+export type ProductRole = "recommended" | "lower_cost" | "broader" | "alternative";
+
+export interface ProductCoverStructure {
+  mainMember: number;
+  spouse: number | null;
+  child: number | null; // illustration for 1 child
+}
+
 export interface ProductRecommendation {
   product: Product;
   score: number;
@@ -66,7 +75,14 @@ export interface ProductRecommendation {
   affordabilityScore: number;
   memberCoverageScore: number;
   featureScore: number;
+  role: ProductRole;
   isRecommended: boolean;
   estimatedMonthlyPremium: number;
+  coverStructure: ProductCoverStructure;
+  /** Auto-generated reasons why this product suits the client */
+  suitabilityReasons: string[];
+  /** FAIS-relevant warnings specific to this product */
+  productWarnings: string[];
+  /** Legacy: compatibility notes from scoring */
   notes: string[];
 }

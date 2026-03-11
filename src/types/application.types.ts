@@ -55,19 +55,105 @@ export interface NeedsAnalysisStepData {
   completedAt: string;
 }
 
+export interface SelectedCoverStructure {
+  mainMember: number;
+  spouse: number | null;
+  child: number | null;
+}
+
+export interface ProductAlternative {
+  productId: string;
+  productName: string;
+  role: string;
+  estimatedMonthlyPremium: number;
+}
+
 export interface ProductSelectionStepData {
   selectedProductId: string;
   selectedProductName: string;
+  selectedProductTier: string;
+  insurer: string;
+  estimatedMonthlyPremium: number;
+  coverStructure: SelectedCoverStructure;
+  suitabilityReasons: string[];
+  productWarnings: string[];
+  alternativeOptions: ProductAlternative[];
   selectionReason?: string;
   completedAt: string;
 }
 
+export interface PolicyAddOn {
+  id: string;
+  name: string;
+  monthlyPremium: number;
+}
+
+/** Counts of each member type included in the policy */
+export interface CoveredMembersConfig {
+  mainMember: boolean;
+  spouse: boolean;
+  children: number;
+  parents: number;
+  parentInLaw: number;
+  extendedFamily: number;
+}
+
+/** Selected sum assured per member category (0 = not included) */
+export interface CoverAmountsConfig {
+  mainMember: number;
+  spouse: number;
+  child: number;       // per-child amount
+  parent: number;      // per-parent amount
+  parentInLaw: number;
+  extendedFamily: number;
+}
+
+/** Benefits included or selected at configuration time */
+export interface OptionalBenefitsConfig {
+  groceryBenefit: boolean;
+  tombstoneBenefit: boolean;
+  repatriationBenefit: boolean;
+  accidentalDeathImmediateCover: boolean;
+  premiumWaiver: boolean;
+  familyIncomeSupport: boolean;
+}
+
+export type ProductAffordabilityStatus =
+  | "within_range"
+  | "slightly_above_range"
+  | "above_range"
+  | "unknown";
+
 export interface ConfigurationStepData {
+  // Core premium & members (feeds premium calc and ROA)
   sumAssured: number;
   monthlyPremium: number;
   members: FamilyMember[];
   beneficiaries: Beneficiary[];
   premiumBreakdown: PremiumBreakdown;
+  addOns?: PolicyAddOn[];
+
+  // Structured summary (feeds Steps 6, 7, 9)
+  productCategory?: string;
+  coveredMembers?: CoveredMembersConfig;
+  coverAmounts?: CoverAmountsConfig;
+  optionalBenefits?: OptionalBenefitsConfig;
+  affordabilityStatus?: ProductAffordabilityStatus;
+  configurationWarnings?: string[];
+
+  // Compliance / audit trail (feeds Step 7 ROA narrative)
+  originalRecommendation?: {
+    mainMember: number;
+    spouse: number | null;
+    child: number | null;
+    estimatedMonthlyPremium: number;
+  };
+  coverChangedFromRecommendation?: boolean;
+  coverIncreased?: boolean;    // configured premium > recommended premium
+  coverDecreased?: boolean;    // configured premium < recommended premium
+  affordabilityWarningTriggered?: boolean;
+  duplicationWarningShown?: boolean;
+
   completedAt: string;
 }
 
